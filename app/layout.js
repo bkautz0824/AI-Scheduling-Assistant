@@ -1,7 +1,11 @@
-"use client"
+// app/layout.js
+"use client";
+
 import localFont from "next/font/local";
 import "./globals.css";
 import { SessionProvider } from 'next-auth/react';
+// import 'antd/dist/reset.css'; // Reset styles for Ant Design v5
+// import 'antd/dist/antd.css';   // Ant Design styles
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",

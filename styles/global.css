@@ -1,37 +1,13 @@
-/* styles/global.css */
+/* globals.css or a CSS module */
 
-/* Customizing the calendar container */
-.fc {
-    font-family: Arial, sans-serif;
-  }
-  
-  /* Styling the day cells */
-  .fc-daygrid-day {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-  }
-  
-  /* Styling the event blocks */
-  .fc-daygrid-event {
-    background-color: #4285F4; /* Google Calendar-like blue */
-    color: white;
-    border-radius: 4px;
-    padding: 5px;
-  }
-  
-  /* Customizing the calendar header */
-  .fc-toolbar-title {
-    font-size: 1.5em;
-    color: #0070f3;
-  }
-  
-  .fc-button {
-    background-color: #0070f3;
-    color: white;
-    border: none;
-  }
-  
-  .fc-button:hover {
-    background-color: #005bb5;
-  }
-  
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.events .ant-badge-status-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
