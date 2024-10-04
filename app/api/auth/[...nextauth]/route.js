@@ -20,12 +20,13 @@ export const authOptions = {
   callbacks: {
     async jwt({ token, account }) {
       if (account) {
+        console.log('Account:', account);
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
-        token.accessTokenExpires = account.expires_at * 1000; // Convert to ms
+        token.accessTokenExpires = Date.now() + account.expires_in * 1000;
       }
       // Return previous token if the access token has not expired yet
-      if (Date.now() < token.accessTokenExpires) {
+      if (token.accessTokenExpires && Date.now() < token.accessTokenExpires) {
         return token;
       }
       // Access token has expired, try to update it
@@ -33,6 +34,7 @@ export const authOptions = {
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken;
+      session.refreshToken = token.refreshToken;
       session.error = token.error;
       return session;
     },
@@ -68,7 +70,7 @@ async function refreshAccessToken(token) {
       ...token,
       accessToken: refreshedTokens.access_token,
       accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000, // Expires in ms
-      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken, // Fall back to old refresh token
+      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken, // Fallback to old refresh token
     };
   } catch (error) {
     console.error('Error refreshing access token:', error);
@@ -78,3 +80,4 @@ async function refreshAccessToken(token) {
     };
   }
 }
+
