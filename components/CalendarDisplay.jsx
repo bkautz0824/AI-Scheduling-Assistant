@@ -4,52 +4,12 @@ import { useEffect, useState } from 'react';
 import { Calendar, Badge, Button, Select, Space, Spin, Alert } from 'antd';
 import dayjs from 'dayjs';
 
-export default function CalendarDisplay() {
-  const [events, setEvents] = useState([]);
-  const [currentDate, setCurrentDate] = useState(dayjs());
-    const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    async function fetchEventsForDate(date) {
-      setLoading(true); // Start loading
-      setError(null); 
-      try {
-        const formattedMonth = date.format('YYYY-MM');
-        const res = await fetch(`/api/calendar-events?month=${formattedMonth}`);
-        const data = await res.json();
-        console.log(data)
-        if (data.message === 'Unauthorized' || data.message === 'Invalid Credentials') {
-          window.location.href = window.location.origin;
-        } else {
-          const formattedEvents = data.map((event) => ({
-            title: event.summary,
-            start: new Date(event.start.dateTime || event.start.date),
-            end: new Date(event.end.dateTime || event.end.date),
-          }));
-          setEvents(formattedEvents);
-        }
-      } catch (error) {
-        if(error.message === 'Unauthorized' || error.message === 'Invalid Credentials') {
-          window.location.href = window.location.origin;
-        } 
-        // Optionally, set an error state here to display an error message
-      }finally {
-        setLoading(false); // End loading
-      }
-    }
-
-    fetchEventsForDate(currentDate);
-  }, [currentDate]);
-
-  const handlePanelChange = (value, mode) => {
-    setCurrentDate(dayjs(value));
-  };
+export default function CalendarDisplay({ calendarData, currentDate, onPanelChange }) {
 
   // Helper function to get events for a specific date
   const getListData = (value) => {
     const dateString = dayjs(value).format('YYYY-MM-DD');
-    return events
+    return calendarData
       .filter((event) => {
         const eventDate = dayjs(event.start).format('YYYY-MM-DD');
         return eventDate === dateString;
@@ -105,25 +65,21 @@ export default function CalendarDisplay() {
 
     const onMonthChange = (newMonth) => {
       const newValue = current.clone().month(newMonth);
-      setCurrentDate(newValue);
       onChange(newValue);
     };
 
     const onYearChange = (newYear) => {
       const newValue = current.clone().year(newYear);
-      setCurrentDate(newValue);
       onChange(newValue);
     };
 
     const goToPreviousMonth = () => {
       const newValue = current.clone().subtract(1, 'month');
-      setCurrentDate(newValue);
       onChange(newValue);
     };
 
     const goToNextMonth = () => {
       const newValue = current.clone().add(1, 'month');
-      setCurrentDate(newValue);
       onChange(newValue);
     };
 
@@ -134,14 +90,14 @@ export default function CalendarDisplay() {
           <Select
             value={month}
             onChange={onMonthChange}
-            dropdownMatchSelectWidth={false}
+            popupMatchSelectWidth={false}
           >
             {monthOptions}
           </Select>
           <Select
             value={year}
             onChange={onYearChange}
-            dropdownMatchSelectWidth={false}
+            popupMatchSelectWidth={false}
           >
             {yearOptions}
           </Select>
@@ -153,10 +109,11 @@ export default function CalendarDisplay() {
 
   return (
     <div style={{ padding: '16px', background: '#fff' }}>
-        {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
-        <Spin spinning={loading} tip="Loading...">
-        <Calendar cellRender={dateFullCellRender} onPanelChange={handlePanelChange} headerRender={headerRender} />
-        </Spin>
+      <Calendar 
+        cellRender={dateFullCellRender} 
+        onPanelChange={onPanelChange} 
+        headerRender={headerRender} 
+      />
     </div>
   );
 }
