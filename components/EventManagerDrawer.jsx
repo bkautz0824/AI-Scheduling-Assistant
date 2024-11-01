@@ -1,9 +1,18 @@
 "use client";
-
-import { Drawer, Input, Button, Alert, Spin } from 'antd';
+import { Drawer, Input, Button, Alert, Spin, DatePicker, TimePicker, Checkbox, Select } from 'antd';
 import { useState } from 'react';
+import dayjs from 'dayjs';
 
 const { TextArea } = Input;
+
+const timeZones = [
+    { label: 'Eastern Time (EST)', value: 'America/New_York' },
+    { label: 'Central Time (CST)', value: 'America/Chicago' },
+    { label: 'Mountain Time (MST)', value: 'America/Denver' },
+    { label: 'Pacific Time (PST)', value: 'America/Los_Angeles' },
+    { label: 'UTC', value: 'UTC' },
+    // Add other time zones as needed
+];
 
 export default function EventManagerDrawer({
     isOpen,
@@ -13,28 +22,31 @@ export default function EventManagerDrawer({
 }) {
     const [eventTitle, setEventTitle] = useState('');
     const [eventDate, setEventDate] = useState('');
-    const [eventTime, setEventTime] = useState('');
-    const [eventDuration, setEventDuration] = useState('');
+    const [startTime, setStartTime] = useState('');
+    const [endTime, setEndTime] = useState('');
     const [eventLocation, setEventLocation] = useState('');
     const [eventDescription, setEventDescription] = useState('');
+    const [isMultiDay, setIsMultiDay] = useState(false);
+    const [endDate, setEndDate] = useState(null);
+    const [timeZone, setTimeZone] = useState('America/New_York'); // Default to EST
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
 
     const handleAddEvent = async () => {
-        // Validate required fields
-        if (!eventTitle || !eventDate || !eventTime) {
-            setError('Please fill in the required fields: Title, Date, and Time.');
+        if (!eventTitle || !eventDate || !startTime || !endTime) {
+            setError('Please fill in the required fields: Title, Date, Start Time, and End Time.');
             return;
         }
 
-        // Construct eventDetails object
         const eventDetails = {
             title: eventTitle,
             date: eventDate,
-            time: eventTime,
-            duration: eventDuration ? parseInt(eventDuration, 10) : 60, // default to 60 minutes if not provided
+            startTime: startTime.format("HH:mm"),
+            endTime: endTime.format("HH:mm"),
             location: eventLocation,
             description: eventDescription,
+            endDate: isMultiDay ? endDate : null,
+            timeZone: timeZone, // Pass the selected time zone
         };
 
         setLoading(true);
@@ -47,27 +59,23 @@ export default function EventManagerDrawer({
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    message: '', // No user message in this case
-                    calendarData: '', // Not needed for direct event addition
                     intent: 'manage',
-                    eventDetails: eventDetails, // Send the structured event details
+                    eventDetails: eventDetails,
                 }),
             });
 
             const data = await response.json();
             if (response.ok) {
-                // Refresh calendar events
                 await fetchEventsForDate(currentDate);
-
-                // Clear the form fields
                 setEventTitle('');
                 setEventDate('');
-                setEventTime('');
-                setEventDuration('');
+                setStartTime('');
+                setEndTime('');
                 setEventLocation('');
                 setEventDescription('');
-
-                // Close the drawer
+                setIsMultiDay(false);
+                setEndDate(null);
+                setTimeZone('America/New_York'); // Reset to EST
                 toggleDrawer(false);
             } else {
                 setError(data.error || 'An error occurred.');
@@ -94,24 +102,52 @@ export default function EventManagerDrawer({
                     onChange={(e) => setEventTitle(e.target.value)}
                     style={{ marginBottom: '8px' }}
                 />
-                <Input
-                    placeholder="Date (YYYY-MM-DD) *"
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                    style={{ marginBottom: '8px' }}
+                <DatePicker
+                    placeholder="Start Date *"
+                    value={eventDate ? dayjs(eventDate) : null}
+                    onChange={(date) => setEventDate(date ? date.format('YYYY-MM-DD') : '')}
+                    style={{ marginBottom: '8px', width: '100%' }}
                 />
-                <Input
-                    placeholder="Time (HH:MM AM/PM) *"
-                    value={eventTime}
-                    onChange={(e) => setEventTime(e.target.value)}
-                    style={{ marginBottom: '8px' }}
+                <TimePicker
+                    placeholder="Start Time *"
+                    value={startTime ? dayjs(startTime, "HH:mm") : null}
+                    onChange={(time) => setStartTime(time)}
+                    style={{ marginBottom: '8px', width: '100%' }}
+                    format="HH:mm"
                 />
-                <Input
-                    placeholder="Duration (minutes)"
-                    value={eventDuration}
-                    onChange={(e) => setEventDuration(e.target.value)}
-                    style={{ marginBottom: '8px' }}
+                <TimePicker
+                    placeholder="End Time *"
+                    value={endTime ? dayjs(endTime, "HH:mm") : null}
+                    onChange={(time) => setEndTime(time)}
+                    style={{ marginBottom: '8px', width: '100%' }}
+                    format="HH:mm"
                 />
+
+                <Checkbox
+                    checked={isMultiDay}
+                    onChange={(e) => setIsMultiDay(e.target.checked)}
+                    style={{ marginBottom: '8px' }}
+                >
+                    Multi-day Event
+                </Checkbox>
+
+                {isMultiDay && (
+                    <DatePicker
+                        placeholder="End Date"
+                        value={endDate ? dayjs(endDate) : null}
+                        onChange={(date) => setEndDate(date ? date.format('YYYY-MM-DD') : null)}
+                        style={{ marginBottom: '8px', width: '100%' }}
+                    />
+                )}
+
+                <Select
+                    placeholder="Select Time Zone"
+                    value={timeZone}
+                    onChange={(value) => setTimeZone(value)}
+                    options={timeZones}
+                    style={{ marginBottom: '8px', width: '100%' }}
+                />
+
                 <Input
                     placeholder="Location"
                     value={eventLocation}
