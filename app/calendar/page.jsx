@@ -5,19 +5,22 @@ import { Layout, Menu, Button, Tooltip, Spin, Alert } from 'antd';
 import {
   HomeOutlined,
   MessageOutlined,
+  PlusOutlined,
   MenuUnfoldOutlined,
   MenuFoldOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import CalendarDisplay from '@/components/CalendarDisplay';
 import ChatDrawer from '@/components/ChatDrawer';
+import EventManagerDrawer from '@/components/EventManagerDrawer';
 import dayjs from 'dayjs';
 
 const { Sider, Content } = Layout;
 
 export default function CalendarPage() {
   const [collapsed, setCollapsed] = useState(true); // Sidebar collapsed state
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false); // Chat Drawer state
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false); // Chat Drawer stat
+  const [isEventDrawerOpen, setIsEventDrawerOpen] = useState(false); // Event Manager Drawer state
 
   // State for Calendar Data
   const [calendarData, setCalendarData] = useState([]);
@@ -33,10 +36,14 @@ export default function CalendarPage() {
     setIsDrawerOpen(open);
   };
 
+  const toggleEventDrawer = (open) => {
+    setIsEventDrawerOpen(open);
+  };
+
   // Function to fetch calendar events
   const fetchEventsForDate = async (date) => {
     setLoading(true); // Start loading
-    setError(null); 
+    setError(null);
     try {
       const formattedMonth = date.format('YYYY-MM');
       const res = await fetch(`/api/calendar-events?month=${formattedMonth}`);
@@ -55,16 +62,17 @@ export default function CalendarPage() {
       // Format the events for frontend display
       const formattedEventsForDisplay = data.map((event) => ({
         id: event.id,
-        title: event.summary,
-        start: new Date(event.start.dateTime || event.start.date),
-        end: new Date(event.end.dateTime || event.end.date),
-        location: event.location || 'Not specified',
-        description: event.description || 'No description provided',
-        isAllDay: !!event.start.date,
+        title: event.title, // Updated to event.title
+        start: new Date(event.start), // event.start is already a string
+        end: new Date(event.end), // event.end is already a string
+        location: event.location,
+        description: event.description,
+        isAllDay: event.isAllDay, // Directly use event.isAllDay
       }));
+
       setCalendarData(formattedEventsForDisplay);
     } catch (error) {
-      if(error.message === 'Unauthorized' || error.message === 'Invalid Credentials') {
+      if (error.message === 'Unauthorized' || error.message === 'Invalid Credentials') {
         window.location.href = window.location.origin;
       } else {
         setError(error.message);
@@ -135,6 +143,15 @@ export default function CalendarPage() {
               <span>Open Chat</span>
             )}
           </Menu.Item>
+          <Menu.Item key="3" icon={<PlusOutlined />} onClick={() => toggleEventDrawer(true)}>
+            {collapsed ? (
+              <Tooltip title="Add Event" placement="right">
+                <span />
+              </Tooltip>
+            ) : (
+              <span>Add Event</span>
+            )}
+          </Menu.Item>
         </Menu>
 
         {/* Toggle Button */}
@@ -172,7 +189,16 @@ export default function CalendarPage() {
       <ChatDrawer 
         isOpen={isDrawerOpen} 
         toggleDrawer={toggleDrawer} 
-        calendarData={formattedCalendarData} // Pass formatted string
+        calendarData={formattedCalendarData} 
+        fetchEventsForDate={fetchEventsForDate}
+        currentDate={currentDate}// Pass formatted string
+      />
+
+      <EventManagerDrawer
+        isOpen={isEventDrawerOpen}
+        toggleDrawer={toggleEventDrawer}
+        fetchEventsForDate={fetchEventsForDate}
+        currentDate={currentDate}
       />
     </Layout>
   );

@@ -1,14 +1,29 @@
-// middlewares/rateLimiter.js
+// middleware/rateLimiter.js
 
-import rateLimit from 'express-rate-limit';
+import { NextResponse } from 'next/server';
+import rateLimit from 'next-rate-limit';
 
 // Initialize the rate limiter
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
-  message: 'Too many requests from this IP, please try again after 15 minutes.',
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+const limiter = rateLimit({
+  interval: 15 * 60 * 1000, // 15 minutes
+  uniqueTokenPerInterval: 500, // Max 500 unique IPs per 15 minutes
 });
 
-export default apiLimiter;
+export default async function apiLimiter(req) {
+  // try {
+  //   const identifier =
+  //     req.ip ||
+  //     req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+  //     'unknown';
+
+  //   // Check if the rate limit has been exceeded
+  //   await limiter.check(req, 100, identifier); // 100 requests per 15 minutes per IP
+
+  //   return null; // Not rate limited
+  // } catch {
+  //   return NextResponse.json(
+  //     { error: 'Too many requests from this IP, please try again after 15 minutes.' },
+  //     { status: 429 }
+  //   );
+  // }
+}

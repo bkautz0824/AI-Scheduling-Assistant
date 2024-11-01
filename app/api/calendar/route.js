@@ -7,7 +7,7 @@ import { Configuration, OpenAIApi } from 'openai';
 
 const oauth2Client = new google.auth.OAuth2();
 
-export async function POST(request) {
+export async function GET(request) {
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
