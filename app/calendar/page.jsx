@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Layout, Menu, Button, Tooltip, Spin, Alert } from 'antd';
+import { Layout, Menu, Button, Tooltip, Spin, Alert, Switch } from 'antd';
 import {
   HomeOutlined,
   MessageOutlined,
@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import CalendarDisplay from '@/components/CalendarDisplay';
+import YearlyView from '@/components/YearlyView'; // Import the YearlyView component
 import ChatDrawer from '@/components/ChatDrawer';
 import EventManagerDrawer from '@/components/EventManagerDrawer';
 import dayjs from 'dayjs';
@@ -22,11 +23,16 @@ export default function CalendarPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false); // Chat Drawer stat
   const [isEventDrawerOpen, setIsEventDrawerOpen] = useState(false); // Event Manager Drawer state
 
+
   // State for Calendar Data
   const [calendarData, setCalendarData] = useState([]);
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Toggle for year view
+  const [yearView, setYearView] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(null); // Track selected month for month view
 
   const toggleCollapsed = () => {
     setCollapsed(!collapsed);
@@ -38,6 +44,11 @@ export default function CalendarPage() {
 
   const toggleEventDrawer = (open) => {
     setIsEventDrawerOpen(open);
+  };
+
+  const handleMonthClick = (month, year) => {
+    setCurrentDate(dayjs(`${year}-${month}-01`));
+    setYearView(false); // Switch to month view
   };
 
   // Function to fetch calendar events
@@ -166,7 +177,14 @@ export default function CalendarPage() {
       <Layout className="site-layout" style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }}>
         <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
           <div style={{ padding: 24, background: '#fff', textAlign: 'center' }}>
-            {/* Display loading spinner or error message if necessary */}
+            <Switch
+              checkedChildren="Year View"
+              unCheckedChildren="Month View"
+              checked={yearView}
+              onChange={() => setYearView(!yearView)}
+              style={{ marginBottom: '16px' }}
+            />
+
             {loading && (
               <div style={{ marginBottom: '16px' }}>
                 <Spin tip="Loading events..." />
@@ -175,12 +193,17 @@ export default function CalendarPage() {
             {error && (
               <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />
             )}
-            {/* Pass the fetched calendarData to CalendarDisplay */}
-            <CalendarDisplay 
-              calendarData={calendarData}
-              currentDate={currentDate}
-              onPanelChange={handlePanelChange}
-            />
+
+            {/* Conditionally render the CalendarDisplay or YearlyView based on the toggle */}
+            {yearView ? (
+               <YearlyView data={calendarData} onMonthClick={handleMonthClick} />
+            ) : (
+              <CalendarDisplay 
+                calendarData={calendarData}
+                currentDate={currentDate}
+                onPanelChange={handlePanelChange}
+              />
+            )}
           </div>
         </Content>
       </Layout>

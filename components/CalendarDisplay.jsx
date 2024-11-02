@@ -1,19 +1,24 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Calendar, Badge, Button, Select, Space, Spin, Alert } from 'antd';
+import { Calendar, Badge, Button, Select, Space, Drawer, List } from 'antd';
 import dayjs from 'dayjs';
 
-export default function CalendarDisplay({ calendarData, currentDate, onPanelChange }) {
+export default function CalendarDisplay({ calendarData, currentDate, onPanelChange, onBack }) {
+  const [selectedDate, setSelectedDate] = useState(currentDate);
+  const [drawerVisible, setDrawerVisible] = useState(false); // Controls drawer visibility
+  const [dayEvents, setDayEvents] = useState([]); // Events for the selected day
+
+  // Update selected date when `currentDate` changes (e.g., from YearlyView selection)
+  useEffect(() => {
+    setSelectedDate(currentDate);
+  }, [currentDate]);
 
   // Helper function to get events for a specific date
   const getListData = (value) => {
     const dateString = dayjs(value).format('YYYY-MM-DD');
     return calendarData
-      .filter((event) => {
-        const eventDate = dayjs(event.start).format('YYYY-MM-DD');
-        return eventDate === dateString;
-      })
+      .filter((event) => dayjs(event.start).format('YYYY-MM-DD') === dateString)
       .map((event) => ({
         type: 'success', // Customize based on event properties
         content: event.title,
@@ -23,13 +28,27 @@ export default function CalendarDisplay({ calendarData, currentDate, onPanelChan
   const dateFullCellRender = (value) => {
     const listData = getListData(value);
     return (
-      <div className="events">
+      <div
+        className="events"
+        onClick={() => handleDayClick(value)} // Open drawer with day-specific data
+        style={{ cursor: 'pointer' }}
+      >
         {listData.map((item, index) => (
           <Badge key={index} status={item.type} text={item.content} />
         ))}
       </div>
     );
   };
+
+  // Handle day click to open the drawer
+  const handleDayClick = (date) => {
+    const eventsForDay = calendarData.filter((event) =>
+      dayjs(event.start).isSame(date, 'day')
+    );
+    setDayEvents(eventsForDay);
+    setDrawerVisible(true);
+  };
+
   const headerRender = ({ value, onChange }) => {
     const current = value.clone();
 
@@ -109,11 +128,41 @@ export default function CalendarDisplay({ calendarData, currentDate, onPanelChan
 
   return (
     <div style={{ padding: '16px', background: '#fff' }}>
-      <Calendar 
-        cellRender={dateFullCellRender} 
-        onPanelChange={onPanelChange} 
-        headerRender={headerRender} 
+      <Space style={{ marginBottom: '16px' }}>
+        <Button onClick={onBack}>Back to Yearly View</Button>
+      </Space>
+
+      <Calendar
+        value={selectedDate}
+        cellRender={dateFullCellRender}
+        onPanelChange={(value) => {
+          onPanelChange(value);
+          setSelectedDate(value);
+        }}
+        headerRender={headerRender}
       />
+
+      {/* Drawer component for day-specific events */}
+      <Drawer
+        title={`Events on ${selectedDate.format('MMMM D, YYYY')}`}
+        placement="bottom"
+        onClose={() => setDrawerVisible(false)}
+        open={drawerVisible}
+        height={300}
+      >
+        <List
+          dataSource={dayEvents}
+          renderItem={(event) => (
+            <List.Item>
+              <List.Item.Meta
+                title={event.title}
+                description={`${dayjs(event.start).format('HH:mm')} - ${event.location || 'No location'}`}
+              />
+            </List.Item>
+          )}
+          locale={{ emptyText: 'No events for this day' }}
+        />
+      </Drawer>
     </div>
   );
 }
